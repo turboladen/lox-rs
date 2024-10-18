@@ -1,4 +1,4 @@
-mod scanner;
+pub mod scanner;
 
 use std::{env::Args, io::BufRead};
 
