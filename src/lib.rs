@@ -63,7 +63,7 @@ impl Lox {
     }
 
     fn run(&self, source: String) {
-        let scanner = scanner::Scanner::new(source);
+        let mut scanner = scanner::Scanner::new(source);
         let tokens = scanner.scan_tokens();
 
         for token in tokens {

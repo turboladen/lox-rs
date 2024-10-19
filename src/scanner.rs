@@ -1,16 +1,41 @@
 use core::fmt;
+use std::num::NonZeroUsize;
 
 pub struct Scanner {
     source: String,
+    tokens: Vec<Token>,
+    start: usize,
+    current: usize,
+    line: NonZeroUsize,
 }
 
 impl Scanner {
     pub fn new(source: String) -> Self {
-        Self { source }
+        Self {
+            source,
+            tokens: Vec::new(),
+            start: 0,
+            current: 0,
+            line: unsafe { NonZeroUsize::new_unchecked(1) },
+        }
     }
 
-    pub fn scan_tokens(&self) -> Vec<Token> {
-        todo!("Implement scan_tokens()")
+    pub fn scan_tokens(&mut self) -> &[Token] {
+        while !self.is_at_end() {
+            // We are at the beginning of the next lexeme.
+            self.start = self.current;
+            self.scan_token();
+        }
+
+        &self.tokens
+    }
+
+    fn is_at_end(&self) -> bool {
+        self.current >= self.source.len()
+    }
+
+    fn scan_token(&self) {
+        todo!()
     }
 }
 
