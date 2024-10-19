@@ -1,6 +1,6 @@
 pub mod scanner;
 
-use std::{env::Args, io::BufRead};
+use std::{env::Args, io::BufRead, num::NonZeroUsize};
 
 use anyhow::bail;
 
@@ -71,11 +71,11 @@ impl Lox {
         }
     }
 
-    fn error(line: u64, message: String) {
+    fn error(line: NonZeroUsize, message: String) {
         Self::report(line, String::new(), message);
     }
 
-    fn report(line: u64, loc: String, message: String) {
+    fn report(line: NonZeroUsize, loc: String, message: String) {
         eprintln!("[line {line}] Error{loc}: {message}")
     }
 }

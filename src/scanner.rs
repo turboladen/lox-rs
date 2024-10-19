@@ -1,6 +1,8 @@
 use core::fmt;
 use std::num::NonZeroUsize;
 
+use crate::Lox;
+
 pub struct Scanner {
     source: String,
     tokens: Vec<Token>,
@@ -34,8 +36,90 @@ impl Scanner {
         self.current >= self.source.len()
     }
 
-    fn scan_token(&self) {
-        todo!()
+    fn scan_token(&mut self) {
+        let c = self.advance();
+
+        macro_rules! match_second {
+            ($c:expr, $if_true:ident, $if_false:ident) => {
+                if self._match($c) {
+                    TokenType::$if_true
+                } else {
+                    TokenType::$if_false
+                }
+            };
+        }
+
+        match c {
+            b'(' => self.add_token(TokenType::LeftParen, None),
+            b')' => self.add_token(TokenType::RightParen, None),
+            b'{' => self.add_token(TokenType::LeftBrace, None),
+            b'}' => self.add_token(TokenType::RightBrace, None),
+            b',' => self.add_token(TokenType::Comma, None),
+            b'.' => self.add_token(TokenType::Dot, None),
+            b'-' => self.add_token(TokenType::Minus, None),
+            b'+' => self.add_token(TokenType::Plus, None),
+            b';' => self.add_token(TokenType::Semicolon, None),
+            b'*' => self.add_token(TokenType::Star, None),
+            b'!' => {
+                let t = match_second!(b'=', BangEqual, Bang);
+                self.add_token(t, None);
+            }
+            b'=' => {
+                let t = match_second!(b'=', EqualEqual, Equal);
+                self.add_token(t, None);
+            }
+            b'<' => {
+                let t = match_second!(b'=', LessEqual, Less);
+                self.add_token(t, None);
+            }
+            b'>' => {
+                let t = match_second!(b'=', GreaterEqual, Greater);
+                self.add_token(t, None);
+            }
+            t => {
+                Lox::error(self.line, format!("Unexpected character: {t}"));
+            }
+        }
+    }
+
+    fn advance(&mut self) -> u8 {
+        self.current += 1;
+
+        self.source_current_char()
+    }
+
+    // NOTE: This isn't in the book; it's a shortcut for `source.charAt()`.
+    //
+    fn source_current_char(&self) -> u8 {
+        *self
+            .source
+            .as_bytes()
+            .get(self.current)
+            .expect("`current` exceeded the length of `source`")
+    }
+
+    fn add_token(&mut self, token_type: TokenType, literal: Option<Object>) {
+        let text = self
+            .source
+            .get(self.start..self.current)
+            .expect("`start` and/or `current` are invalid `source` bounds");
+
+        self.tokens
+            .push(Token::new(token_type, text.to_string(), literal, self.line))
+    }
+
+    fn _match(&mut self, c: u8) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+
+        if self.source_current_char() != c {
+            return false;
+        }
+
+        self.current += 1;
+
+        true
     }
 }
 
@@ -43,22 +127,34 @@ impl Scanner {
 pub struct Token {
     _type: TokenType,
     lexeme: String,
-    literal: Object,
-    line: u64,
+    literal: Option<Object>,
+    line: NonZeroUsize,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} {} {}", self._type, self.lexeme, self.literal)
+        match self.literal.as_ref() {
+            Some(literal) => {
+                write!(f, "{:?} {} {}", self._type, self.lexeme, literal)
+            }
+            None => {
+                write!(f, "{:?} {}", self._type, self.lexeme)
+            }
+        }
     }
 }
 
 impl Token {
-    pub fn new(_type: TokenType, lexeme: String, line: u64) -> Self {
+    pub fn new(
+        _type: TokenType,
+        lexeme: String,
+        literal: Option<Object>,
+        line: NonZeroUsize,
+    ) -> Self {
         Self {
             _type,
             lexeme,
-            literal: Object,
+            literal,
             line,
         }
     }
